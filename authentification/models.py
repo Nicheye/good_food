@@ -6,7 +6,7 @@ class User(AbstractUser):
 	username = models.CharField(max_length=255,unique=True)
 	email = models.CharField(max_length=255)
 	password = models.CharField(max_length=255)
-	USERNAME_FIELD = 'username'
+	USERNAME_FIELD = 'email'
 	REQUIRED_FIELDS = []
 	def profile(self):
 		profile = Profile.objects.get(user=self)
@@ -24,8 +24,15 @@ class Profile(models.Model):
 	sex = models.CharField(max_length=10, choices=SEX_CHOICES, default='M')
 	account_type = models.CharField(max_length=10, choices=ACCOUNT_CHOICES, default='free')
 	weight = models.IntegerField(default=0)
-	avatar = models.ImageField(upload_to="avatars")
+	avatar = models.ImageField(upload_to="avatars",none=True,blank=True)
 	bio = models.CharField(max_length=1000,blank=True)
+	GOAL_CHOICES = (
+        ('Сушка', 'Сушка'),
+		('Баланс', 'Сбалансированный'),
+		('Похудение', 'Похудение'),
+        ('Набор', 'Массанабор'),
+    )
+	goal = models.CharField(max_length=20, choices=GOAL_CHOICES, default='Баланс')
 
 	def create_user_profile(sender,instance,created,**kwargs):
 		if created:
@@ -35,3 +42,9 @@ class Profile(models.Model):
 	
 	post_save.connect(create_user_profile,sender=User)
 	post_save.connect(save_user_profile,sender=User)
+
+class PasswordReset(models.Model):
+    email = models.EmailField()
+    token = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+	

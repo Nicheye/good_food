@@ -1,0 +1,4 @@
+[flake8]
+exclude = venv, migrations
+format = %(path)s:%(row)d:%(col)d: %(code)s %(text)s
+output-file = flake8_errors.txt

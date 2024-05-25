@@ -172,3 +172,11 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
 AUTH_USER_MODEL =  'authentification.User'
+
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST') # mail service smtp
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER') # email id
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD') #password
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')

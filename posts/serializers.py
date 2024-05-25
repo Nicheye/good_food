@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import FoodPost, ImagePost
+from .models import FoodPost, ImagePost,Like
 import os
 from dotenv import load_dotenv
 
@@ -12,7 +12,7 @@ class FPost_serializer(serializers.ModelSerializer):
     images = serializers.SerializerMethodField()
     class Meta:
         model = FoodPost
-        fields = ['title','composition','weight','proteins','fats','carbohydrates','created_at','created_by','id','images']
+        fields = ['title','composition','weight','proteins','fats','carbohydrates','created_at','created_by','id','cat','is_public','images','likes']
         extra_kwargs = {
 			'images':{'read_only':True}
 		}
@@ -31,3 +31,19 @@ class Image_serializer(serializers.ModelSerializer):
         fields = ['image']
     def get_image(self,obj):
         return host + str(obj.image.url)
+
+class Like_serializer(serializers.ModelSerializer):
+    post = serializers.SerializerMethodField()
+    liked_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Like
+        fields = ['post','liked_by']
+    
+    def get_post(self,obj):
+        post_obj = FoodPost.objects.get(id=obj.post.id)
+        post_ser = FPost_serializer(post_obj)
+        return post_ser.data
+    def get_liked_by(self,obj):
+        return str(obj.liked_by.username)
+
