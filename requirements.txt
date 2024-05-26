@@ -6,3 +6,4 @@ Pillow
 python-dotenv
 psycopg2
 flake8
+

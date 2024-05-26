@@ -9,6 +9,12 @@ host = os.getenv('host')
 
 
 
+from rest_framework import serializers
+from .models import FoodPost, ImagePost, Like
+
+from rest_framework import serializers
+from .models import FoodPost, ImagePost, Like
+
 class FPost_serializer(serializers.ModelSerializer):
     created_by = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
@@ -16,22 +22,16 @@ class FPost_serializer(serializers.ModelSerializer):
 
     class Meta:
         model = FoodPost
-        fields = ['title', 
-                  'composition', 
-                  'weight', 
-                  'proteins', 
-                  'fats', 
-                  'carbohydrates', 
-                  'created_at', 
-                  'created_by', 
-                  'id', 
-                  'cat', 
-                  'is_public', 
-                  'images', 
-                  'likes', 
-                  'is_liked']
+        fields = [
+            'title', 'composition', 'weight', 'proteins', 'fats', 
+            'carbohydrates', 'created_at', 'created_by', 'id', 
+            'cat', 'is_public', 'images', 'likes', 'is_liked'
+        ]
         extra_kwargs = {
-            'images': {'read_only': True}
+            'images': {'read_only': True},
+            'title': {'required': False},
+            'composition': {'required': False},
+              # Ensure 'composition' is not required for partial updates
         }
 
     def get_images(self, obj):
@@ -50,6 +50,8 @@ class FPost_serializer(serializers.ModelSerializer):
             return False
         except:
             return False
+
+
 
 
 class Image_serializer(serializers.ModelSerializer):

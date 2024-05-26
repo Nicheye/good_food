@@ -1,6 +1,9 @@
 from collections import Counter
 from .models import Like,FoodPost
 from django.db.models import Q
+from django.db.models import Avg
+from django.db.models.functions import TruncDay
+from .serializers import FPost_serializer
 def calculate_usefulness(post):
     # Ключевые слова в названии и их весовые коэффициенты
     title_keywords = {
@@ -88,5 +91,22 @@ def recommended_posts(user):
 
     return final
     
+
+def get_daily_avg_ben_koef(user):
+    # Group by the date and calculate the average ben_koef
+    daily_avg = (
+        FoodPost.objects
+        .annotate(day=TruncDay('created_at'))
+        .values('day')
+        .annotate(avg_ben_koef=Avg('ben_koef'))
+        .filter(created_by=user)
+        .order_by('day')
+    )
+    
+    dayle_ser = FPost_serializer(daily_avg,many=True)
+    return dayle_ser.data
+
+# Example usage:
+
 
 
