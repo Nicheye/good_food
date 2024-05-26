@@ -14,6 +14,7 @@ from rest_framework.generics import GenericAPIView
 from .models import User,Profile
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from .models import PasswordReset
+from django.core.mail import EmailMessage
 
 class LogoutView(APIView):
      permission_classes = (IsAuthenticated,)
@@ -50,9 +51,14 @@ class RequestPasswordReset(GenericAPIView):
             reset.save()
 
             reset_url = f"{os.getenv('host')}/{token}"
+            
+            email_subject = f"Сброс пароля food_book"
+            email_body = f"Пожалуйста пройдите по этой ссылке и сбросьте пароль.{reset_url}"
 
-            # Sending reset link via email (commented out for clarity)
-            # ... (email sending code)
+            from_email = "your_email@example.com"
+            email_sending = EmailMessage(email_subject, email_body, from_email, email)
+            email_sending.send()
+            
 
             return Response({'success': 'We have sent you a link to reset your password'}, status=status.HTTP_200_OK)
         else:

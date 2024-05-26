@@ -1,3 +1,6 @@
+from collections import Counter
+from .models import Like,FoodPost
+from django.db.models import Q
 def calculate_usefulness(post):
     # Ключевые слова в названии и их весовые коэффициенты
     title_keywords = {
@@ -52,5 +55,38 @@ def calculate_usefulness(post):
 
     return round(normalized_usefulness, 2)
 
+
+def get_favorite_category(user):
+    liked_posts = Like.objects.filter(liked_by=user)
+    categories = [post.post.cat for post in liked_posts]
+    favorite_category = Counter(categories).most_common(1)[0][0] if categories else None
+    return favorite_category
+
+def recommended_posts(user):
+    fav_cat=get_favorite_category(user)
+    firstly = FoodPost.objects.filter(cat=fav_cat)
+    if user.profile.goal == 'Сушка':
+        query = Q(cat='похудение') | Q(cat="спортпит")
+        secondly = FoodPost.objects.filter(query)
+    elif user.profile.goal == 'Баланс':
+        query = Q(cat='здоровье') | Q(cat="анти-Эйджинг")
+        secondly = FoodPost.objects.filter(query)
+    
+    elif user.profile.goal == 'Похудение':
+        query = Q(cat='похудение') | Q(cat="веган")
+        secondly = FoodPost.objects.filter(query)
+    
+    elif user.profile.goal == 'Набор':
+        query = Q(cat='спортпит') | Q(cat="здоровье") | Q(cat="здоровье")
+        secondly = FoodPost.objects.filter(query)
+    else:
+        secondly = FoodPost.objects.order_by('likes')
+    
+    thirdly = FoodPost.objects.filter(cat='здоровье')
+
+    final = firstly | secondly | thirdly
+
+    return final
+    
 
 

@@ -6,7 +6,7 @@ class User(AbstractUser):
 	username = models.CharField(max_length=255,unique=True)
 	email = models.CharField(max_length=255)
 	password = models.CharField(max_length=255)
-	USERNAME_FIELD = 'email'
+	USERNAME_FIELD = 'username'
 	REQUIRED_FIELDS = []
 	def profile(self):
 		profile = Profile.objects.get(user=self)
@@ -24,7 +24,9 @@ class Profile(models.Model):
 	sex = models.CharField(max_length=10, choices=SEX_CHOICES, default='M')
 	account_type = models.CharField(max_length=10, choices=ACCOUNT_CHOICES, default='free')
 	weight = models.IntegerField(default=0)
-	avatar = models.ImageField(upload_to="avatars",none=True,blank=True)
+	height = models.IntegerField(default=0)
+	age = models.IntegerField(default=0)
+	avatar = models.ImageField(upload_to="avatars",blank=True,default='post_images/thug.jpg')
 	bio = models.CharField(max_length=1000,blank=True)
 	GOAL_CHOICES = (
         ('Сушка', 'Сушка'),

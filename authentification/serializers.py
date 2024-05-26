@@ -10,7 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
 	profile = serializers.SerializerMethodField()
 	class Meta:
 		model = User
-		fields =['id','username','password']
+		fields =['id','username','password','profile']
 		extra_kwargs = {
 			'password':{'write_only':True}
 		}
@@ -33,7 +33,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 	avatar = serializers.SerializerMethodField()
 	class Meta:
 		model = Profile
-		fields =['sex','account_type','weight','avatar','bio']
+		fields =['sex','account_type','weight','height','age','avatar','bio']
 	def get_avatar(self,obj):
 		return host +str(obj.avatar.url)
 

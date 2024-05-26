@@ -5,4 +5,5 @@ from .models import *
 
 admin.site.register(FoodPost)
 admin.site.register(ImagePost)
+admin.site.register(Like)
 

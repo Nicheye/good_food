@@ -1,24 +1,34 @@
-from django.shortcuts import render
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
-from .serializers import FPost_serializer,Image_serializer
-from .models import FoodPost,ImagePost
+from .serializers import FPost_serializer,Image_serializer,Like_serializer
+from .models import FoodPost,ImagePost,Like
 from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .tasks import calculate_usefulness
+from .tasks import calculate_usefulness,recommended_posts
 from authentification .models import User,Profile
 from authentification .serializers import UserSerializer,ProfileSerializer
 
 
 class Lenta_View(ListAPIView):
     serializer_class = FPost_serializer
-    queryset = FoodPost.objects.order_by('-created_at')
+    
 
+    def get_serializer_context(self):
+        
+        context = super().get_serializer_context()
+        context.update({
+            'request': self.request,
+        })
+        return context
+    def get_queryset(self):
+        return recommended_posts(self.request.user)
 
 class Post_View(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request, *args, **kwargs):
         id = kwargs.get("id")
@@ -54,10 +64,11 @@ class Post_View(APIView):
         if post_obj.created_by != user:
             return Response({'message': "You do not have permission to edit this post"}, status=status.HTTP_403_FORBIDDEN)
 
-        if 'images' in data and data['images']:
-            images = data['images']
+        if 'images' in data:
+            images = data.getlist('images')
             for image in images:
                 ImagePost.objects.create(post=post_obj, image=image)
+
         
         if 'is_public' in data:
             post_obj.is_public = data['is_public']
@@ -72,9 +83,9 @@ class Profile_View(APIView):
     permission_classes= [IsAuthenticatedOrReadOnly]
 
     def get(self,request,*args,**kwargs):
-        id = kwargs.get("id",None)
-        if id is not None:
-            user_obj = get_object_or_404(FoodPost,id=id)
+        username = kwargs.get("username",None)
+        if username is not None:
+            user_obj = get_object_or_404(User,username=username)
             if user_obj:
                 user_ser = UserSerializer(user_obj)                
                 posts = FoodPost.objects.filter(created_by=user_obj,is_public=True)
@@ -91,8 +102,9 @@ class Profile_View(APIView):
     def patch(self,request):
         data = request.data
         user = request.user
+        profile = Profile.objects.get(user=user)
 
-        profile_ser = ProfileSerializer(data=data)
+        profile_ser = ProfileSerializer(profile,data=data)
         avatar = request.FILES.get('avatar')
         if profile_ser.is_valid(raise_exception=True):
             if avatar is not None:
@@ -102,7 +114,7 @@ class Profile_View(APIView):
     
     
 class Settings_View(APIView):
-    
+    permission_classes = [IsAuthenticated]
     def patch(self,request):
         try:
             user_obj = request.user
@@ -120,6 +132,32 @@ class Settings_View(APIView):
             return Response({'data':user_ser.data},status=status.HTTP_202_ACCEPTED)
         except Exception as e:
             return Response({'error'},status=status.HTTP_400_BAD_REQUEST)
+
+class Like_View(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        user = request.user
+        likes_query = Like.objects.filter(liked_by=user)
+        likes_ser = Like_serializer(likes_query,many=True)
+        return Response({'data':likes_ser.data},status=status.HTTP_200_OK)
+    
+    def put(self,request,*args,**kwargs):
+        id = kwargs.get("id",None)
+        user = request.user
+        if id is not None:
+            post_obj = get_object_or_404(FoodPost,id=id)
+            
+            if post_obj:
+                try:
+                    like_obj = Like.objects.get(post=post_obj)
+                    
+                    like_obj.delete()
+                    return Response({'message':'we have deleted the like'},status=status.HTTP_204_NO_CONTENT)
+                except:
+                    like_obj = Like.objects.create(post=post_obj,liked_by=user)
+                    like_ser= Like_serializer(like_obj)
+                    return Response({'data':like_ser.data},status=status.HTTP_201_CREATED)
 
 
     
