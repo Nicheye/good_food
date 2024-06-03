@@ -95,3 +95,7 @@ class ResetPassword(GenericAPIView):
             return Response({'success':'Password updated'})
         else: 
             return Response({'error':'No user found'}, status=404)
+
+
+
+

@@ -6,4 +6,8 @@ Pillow
 python-dotenv
 psycopg2
 flake8
-
+requests
+celery
+redis
+googletrans==4.0.0-rc1
+drf_social_oauth2==2.2.0

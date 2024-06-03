@@ -15,6 +15,7 @@ services:
       - .:/app
     depends_on:
       - db
+      - redis
   
   db:
     image: postgres
@@ -24,3 +25,20 @@ services:
       - POSTGRES_PASSWORD=postgres
     ports:
       - "5432:5432"
+
+  redis:
+    image: redis
+
+  celery:
+    restart: always
+    build:
+      context: .
+      dockerfile: DockerFile
+    command: >
+      sh -c "celery -A payments beat --loglevel=info &&
+             celery -A payments worker --loglevel=info -P eventlet" # Change eventlet to gevent for lighter worker pool
+    volumes:
+      - ./backend:/app/backend
+    depends_on:
+     
+      - redis

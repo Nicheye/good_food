@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Requests</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    
+
+<div class="relative overflow-x-auto">
+    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+                <th scope="col" class="px-6 py-3">
+                    Nickname
+                </th>
+                <th scope="col" class="px-6 py-3">
+                    Time
+                </th>
+                <th scope="col" class="px-6 py-3">
+                    status
+                </th>
+                <th scope="col" class="px-6 py-3">
+                    action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                {%for request in requests%}
+                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {{request.user}}
+                </th>
+                <td class="px-6 py-4">
+                    {{request.created_at}}
+                </td>
+                <td class="px-6 py-4">
+                    {{request.status}}
+                </td>
+                <td class="px-6 py-4"> 
+                <a href="{%url 'approve_payment' request.id%}" class="font-medium text-lime-400 dark:text-blue-500 hover:underline">Approve</a>
+                <a href="{%url 'decline_payment' request.id%}" class="font-medium text-rose-600 dark:text-blue-500 hover:underline">Decline</a>
+
+                </td>
+                {%endfor%}
+                
+            </tr>
+            
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

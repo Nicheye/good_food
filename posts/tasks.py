@@ -1,62 +1,12 @@
 from collections import Counter
-from .models import Like,FoodPost
-from django.db.models import Q
+from .models import Like,FoodPost,UsefulnessHistory
+from django.db.models import Q, Count
 from django.db.models import Avg
 from django.db.models.functions import TruncDay
-from .serializers import FPost_serializer
-def calculate_usefulness(post):
-    # Ключевые слова в названии и их весовые коэффициенты
-    title_keywords = {
-        'органический': 10,
-        'обезжиренный': 5,
-        'без сахара': 8,
-        'много белков': 12,
-        
-    }
+from .serializers import FPost_serializer,UsefulnessHistorySerializer
+import requests
 
-    # Слова в составе и их весовые коэффициенты
-    composition_keywords = {
-        'сахар': -5,
-        'клетчатка': 5,
-        'витамины': 5,
-        'минералы': 5,
-        'искусственный': -8,
-        'консерванты': -6,
-    }
 
-    # Весовые коэффициенты для БЖУ
-    nutrient_weights = {
-        'белки': 2,
-        'жиры': -1 if post.fats > 10 else 1,
-        'углеводы': 1 if post.carbohydrates < 30 else -1,
-    }
-
-    # Начальный коэффициент полезности
-    usefulness = 0
-
-    # Учет ключевых слов в названии
-    for word, score in title_keywords.items():
-        if word in post.title.lower():
-            usefulness += score
-
-    # Учет состава продукта
-    for word, score in composition_keywords.items():
-        if word in post.composition.lower():
-            usefulness += score
-
-    # Учет содержания БЖУ с учетом веса продукта
-    total_weight = post.weight if post.weight > 0 else 1  # Предотвращаем деление на ноль
-    usefulness += (post.proteins * nutrient_weights['белки']) / total_weight
-    usefulness += (post.fats * nutrient_weights['жиры']) / total_weight
-    usefulness += (post.carbohydrates * nutrient_weights['углеводы']) / total_weight
-
-    
-    min_score = 0  
-    max_score = 100
-    normalized_usefulness = 1 + 9 * (usefulness - min_score) / (max_score - min_score)
-    normalized_usefulness = max(1, min(10, normalized_usefulness))  # Ограничение диапазона от 1 до 10
-
-    return round(normalized_usefulness, 2)
 
 
 def get_favorite_category(user):
@@ -66,47 +16,52 @@ def get_favorite_category(user):
     return favorite_category
 
 def recommended_posts(user):
-    fav_cat=get_favorite_category(user)
-    firstly = FoodPost.objects.filter(cat=fav_cat)
+    fav_cat = get_favorite_category(user)
+    firstly = FoodPost.objects.filter(cat=fav_cat, is_public=True) if fav_cat else FoodPost.objects.none()
+
     if user.profile.goal == 'Сушка':
         query = Q(cat='похудение') | Q(cat="спортпит")
-        secondly = FoodPost.objects.filter(query)
     elif user.profile.goal == 'Баланс':
         query = Q(cat='здоровье') | Q(cat="анти-Эйджинг")
-        secondly = FoodPost.objects.filter(query)
-    
     elif user.profile.goal == 'Похудение':
         query = Q(cat='похудение') | Q(cat="веган")
-        secondly = FoodPost.objects.filter(query)
-    
     elif user.profile.goal == 'Набор':
-        query = Q(cat='спортпит') | Q(cat="здоровье") | Q(cat="здоровье")
-        secondly = FoodPost.objects.filter(query)
+        query = Q(cat='спортпит') | Q(cat="здоровье")
     else:
-        secondly = FoodPost.objects.order_by('likes')
-    
-    thirdly = FoodPost.objects.filter(cat='здоровье')
+        secondly = FoodPost.objects.annotate(like_count=Count('likes')).order_by('-like_count')
+        thirdly = FoodPost.objects.filter(cat='здоровье', is_public=True)
+        return (firstly | secondly | thirdly).distinct()
 
-    final = firstly | secondly | thirdly
+    secondly = FoodPost.objects.filter(query, is_public=True)
+    thirdly = FoodPost.objects.filter(cat='здоровье', is_public=True)
 
+    final = (firstly | secondly | thirdly).distinct().annotate(like_count=Count('likes')).order_by('-like_count')
     return final
-    
 
+def most_popular():
+    query = Q(cat='спортпит') | Q(cat="здоровье")
+    posts_query = FoodPost.objects.filter(query).annotate(like_count=Count('likes')).order_by('-like_count')
+    if posts_query.count() < 1:
+        posts_query = FoodPost.objects.all().annotate(like_count=Count('likes')).order_by('-like_count')
+    return posts_query
+    
 def get_daily_avg_ben_koef(user):
-    # Group by the date and calculate the average ben_koef
+    # Group by the date and calculate the average ben_koef using UsefulnessHistory
     daily_avg = (
-        FoodPost.objects
-        .annotate(day=TruncDay('created_at'))
-        .values('day')
-        .annotate(avg_ben_koef=Avg('ben_koef'))
-        .filter(created_by=user)
-        .order_by('day')
+        UsefulnessHistory.objects
+        .filter(food_post__created_by=user)  # Filter by posts created by the user
+        .annotate(day=TruncDay('calculated_at'))  # Truncate calculated_at to day
+        .values('day')  # Group by day
+        .annotate(avg_ben_koef=Avg('usefulness_score'))  # Calculate the average usefulness score for each day
+        .order_by('day')  # Order by day
     )
     
-    dayle_ser = FPost_serializer(daily_avg,many=True)
-    return dayle_ser.data
+    # Serialize the result
+    daily_ser = UsefulnessHistorySerializer(daily_avg, many=True)
+    return daily_ser.data
 
-# Example usage:
 
+def get_advice(user):
+    pass
 
 
