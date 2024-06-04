@@ -116,7 +116,20 @@ class Post_View(APIView):
         com_ser.is_valid(raise_exception=True)
         com_ser.save(post_obj=post_obj,commented_by=user)
         return Response({'comment': com_ser.data, 'message': 'comment uploaded successfully'}, status=status.HTTP_202_ACCEPTED)
+    def delete(self,request,*args,**kwargs):
+        
+        user = request.user
 
+        id = kwargs.get("id")
+        if id is None:
+            return Response({'message': "You haven't provided an ID"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        post_obj = get_object_or_404(FoodPost, id=id)
+
+        if post_obj.created_by != user:
+            return Response({'message': "You do not have permission to edit this post"}, status=status.HTTP_403_FORBIDDEN)
+        post_obj.delete()
+        return Response({ 'message': 'Post successfully deleted'}, status=status.HTTP_204_NO_CONTENT)
 
         
 
