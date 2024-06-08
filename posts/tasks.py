@@ -64,4 +64,14 @@ def get_daily_avg_ben_koef(user):
 def get_advice(user):
     pass
 
+def get_daily_avg_meal(user):
+    average_values = FoodPost.objects.filter(created_by=user).aggregate(
+    average_weight=Avg('weight'),
+    average_proteins=Avg('proteins'),
+    average_fats=Avg('fats'),
+    average_carbohydrates=Avg('carbohydrates'),
+    average_sugar=Avg('sugar'),
+    average_calories=Avg('calories')
+    )
+    return average_values
 

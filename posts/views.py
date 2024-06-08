@@ -9,7 +9,7 @@ from .models import FoodPost, ImagePost, Like,Bookmark
 from authentification.models import User, Profile
 from authentification.serializers import UserSerializer, ProfileSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from .tasks import recommended_posts,get_daily_avg_ben_koef,get_advice,most_popular
+from .tasks import recommended_posts,get_daily_avg_ben_koef,get_advice,most_popular,get_daily_avg_meal
 from rest_framework import filters
 class Lenta_View(ListAPIView):
     serializer_class = FPost_serializer
@@ -153,7 +153,8 @@ class Profile_View(APIView):
         advice = get_advice(user_obj)
         if user_obj.profile.account_type =='premium':
             diagram =get_daily_avg_ben_koef(user_obj)
-            return Response({'data': user_ser.data, 'posts': posts_ser.data,'diagram':diagram ,'advice':advice }, status=status.HTTP_200_OK)
+            avg_meal = get_daily_avg_meal(user_obj)
+            return Response({'data': user_ser.data, 'posts': posts_ser.data,'diagram':diagram ,'advice':advice,'avg_meal':avg_meal }, status=status.HTTP_200_OK)
         return Response({'data': user_ser.data, 'posts': posts_ser.data,'advice':advice}, status=status.HTTP_200_OK)
     
     def patch(self, request):
